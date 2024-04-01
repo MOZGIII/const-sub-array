@@ -1,5 +1,8 @@
 # const-sub-array
 
+[![crates.io](https://img.shields.io/crates/v/const-sub-array.svg)](https://crates.io/crates/const-sub-array)
+[![docs.rs](https://img.shields.io/docsrs/const-sub-array)](https://docs.rs/const-sub-array)
+
 <!-- cargo-rdme start -->
 
 Allows to extract a fixed size sub-array out of an array with complie-time length and offset
