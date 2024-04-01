@@ -4,4 +4,12 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
+description = "Extract a fixed size sub-array out of an array with complie-time length and offset checks."
+keywords = ["array", "slice", "split", "const", "subslice"]
+categories = ["no-std", "rust-patterns", "data-structures"]
+repository = "https://github.com/MOZGIII/const-sub-array"
+
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
