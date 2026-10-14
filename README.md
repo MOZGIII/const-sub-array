@@ -48,6 +48,14 @@ assert_eq!(
 );
 ```
 
+A compile error is given when the result would be out of bounds:
+```rust
+use const_sub_array::SubArray;
+
+let arr = [1u8, 2, 3];
+let _ = arr.sub_array_ref::<1, 3>();
+```
+
 <!-- cargo-rdme end -->
 
 License: MIT
