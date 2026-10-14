@@ -40,27 +40,18 @@
 //!     ]
 //! );
 //! ```
+//!
+//! A compile error is given when the result would be out of bounds:
+//! ```compile_fail
+//! use const_sub_array::SubArray;
+//!
+//! let arr = [1u8, 2, 3];
+//! let _ = arr.sub_array_ref::<1, 3>();
+//! ```
 
 #![no_std]
 
-/// Apply a compile-time const generic assertion.
-///
-/// Based on <https://github.com/nvzqz/static-assertions/issues/40#issuecomment-846228355>.
-#[macro_export]
-macro_rules! const_assert {
-    ($($list:ident : $ty:ty),* => $expr:expr) => {{
-        struct Assert<$(const $list: usize,)*>;
-        impl<$(const $list: $ty,)*> Assert<$($list,)*> {
-            const OK: u8 = 0 - !($expr) as u8;
-        }
-        Assert::<$($list,)*>::OK
-    }};
-    ($expr:expr) => {
-        const OK: u8 = 0 - !($expr) as u8;
-    };
-}
-
-/// Array that can be slice into a smaller sub-array.
+/// Array that can be sliced into a smaller sub-array.
 ///
 /// See the [crate] level reference.
 ///
@@ -114,16 +105,12 @@ pub unsafe trait SubArray {
 unsafe impl<T, const N: usize> SubArray for [T; N] {
     type Item = T;
 
-    #[allow(unsafe_code)]
     fn sub_array_ref<const OFFSET: usize, const M: usize>(&self) -> &[Self::Item; M] {
-        const_assert!(OFFSET: usize, M: usize, N: usize => OFFSET + M <= N);
-        unsafe { &*(self.as_ptr().add(OFFSET) as *const [T; M]) }
+        sub_array_ref::<T, N, OFFSET, M>(self)
     }
 
-    #[allow(unsafe_code)]
     fn sub_array_mut<const OFFSET: usize, const M: usize>(&mut self) -> &mut [Self::Item; M] {
-        const_assert!(OFFSET: usize, M: usize, N: usize => OFFSET + M <= N);
-        unsafe { &mut *(self.as_ptr().add(OFFSET) as *mut [T; M]) }
+        sub_array_mut::<T, N, OFFSET, M>(self)
     }
 }
 
@@ -141,6 +128,56 @@ where
     fn sub_array_mut<const OFFSET: usize, const N: usize>(&mut self) -> &mut [Self::Item; N] {
         (**self).sub_array_mut::<OFFSET, N>()
     }
+}
+
+/// Get a reference to a sub-array of length `M` starting at `OFFSET`.
+///
+/// This function should only be preferred in const contexts, where trait methods are not allowed.
+///
+/// # Example
+/// ```
+/// use const_sub_array::sub_array_ref;
+///
+/// const ARR: [u8; 5] = [9, 8, 7, 6, 5];
+///
+/// // Get a sub-array starting at offset 3 and size 2.
+/// const SUB: &[u8; 2] = sub_array_ref::<_, 5, 3, 2>(&ARR);
+/// const { assert!(SUB[0] == 6) };
+/// const { assert!(SUB[1] == 5) };
+/// ```
+#[allow(unsafe_code)]
+pub const fn sub_array_ref<T, const N: usize, const OFFSET: usize, const M: usize>(
+    array: &[T; N],
+) -> &[T; M] {
+    const { assert!(OFFSET + M <= N, "sub-array is out of bounds") };
+    unsafe { &*(array.as_ptr().add(OFFSET) as *const [T; M]) }
+}
+
+/// Get a mutable reference to a sub-array of length `M` starting at `OFFSET`.
+///
+/// This function should only be preferred in const contexts, where trait methods are not allowed.
+///
+/// # Example
+/// ```
+/// use const_sub_array::sub_array_mut;
+/// const ARR: [u8; 5] = [9, 8, 7, 6, 5];
+///
+/// const fn reverse_first_three<T, const N: usize>(mut array: [T; N]) -> [T; N] {
+///     let sub = sub_array_mut::<T, N, 0, 3>(&mut array);
+///     sub.reverse();
+///     array
+/// }
+///
+/// const MODIFIED: [u8; 5] = reverse_first_three(ARR);
+///
+/// assert!(MODIFIED == [7, 8, 9, 6, 5]);
+/// ```
+#[allow(unsafe_code)]
+pub const fn sub_array_mut<T, const N: usize, const OFFSET: usize, const M: usize>(
+    array: &mut [T; N],
+) -> &mut [T; M] {
+    const { assert!(OFFSET + M <= N, "sub-array is out of bounds") };
+    unsafe { &mut *(array.as_mut_ptr().add(OFFSET) as *mut [T; M]) }
 }
 
 #[cfg(test)]
