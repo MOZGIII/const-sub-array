@@ -1,4 +1,8 @@
 [licenses]
-allow = ["GPL-2.0"]
-copyleft = "warn"
-allow-osi-fsf-free = "both"
+allow = ["MIT"]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
